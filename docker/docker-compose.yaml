@@ -1,0 +1,43 @@
+﻿version: '3.8'
+
+services:
+
+  storage:
+    container_name: postgres_container
+    image: postgres:12
+    environment:
+      POSTGRES_DB: TEST_DB
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Test-password}
+      PGDATA: /data/postgres
+    volumes:
+       - storage:/data/postgres
+       - ./docker/postgres/init/init-user-db.sh:/docker-entrypoint-initdb.d/init-user-db.sh
+    ports:
+      - "5432:5432"
+    networks:
+      - internal
+    restart: unless-stopped
+
+  baseimage:
+    container_name: python_pandas
+    image: python-pandas-${ENVIRONMENT}:${VERSION}
+    build:
+      context: ./docker/docker-images
+      dockerfile: Dockerfile.baseimage
+
+  base-gnupg-image:
+    container_name: python_gnupg
+    image: python-gnupg-${ENVIRONMENT}:${VERSION}
+    build:
+      context: ./docker/docker-images
+      dockerfile: Dockerfile.gnupg_test
+    environment:
+      - PYTHONUNBUFFERED=1
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+    storage:
